@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebUSB / WebBluetooth Test</title>
+</head>
+
+<body>
+  <div>
+    <label>WebUSB / WebBluetooth Testing Site</label>
+    <br \>
+    <br \>
+    <button id="request-usb-device" type="button">Request USB Device</button>
+    <br \>
+    <br \>
+    <textarea readonly id="txtarea-request-usb-device" cols="50" rows="10"></textarea>
+    <br \>
+    <br \>
+    <br \>
+    <br \>
+    <button id="request-bl-device" type="button">Request Bluetooth Device</button>
+    <br \>
+    <br \>
+    <textarea readonly id="txtarea-request-bl-device" cols="50" rows="10"></textarea>
+  </div>
+  <script>
+    document.getElementById("request-usb-device").addEventListener("click", () => {
+      const filters = [];
+      navigator.usb
+        .requestDevice({ filters })
+        .then((usbDevice) => {
+          document.getElementById("txtarea-request-usb-device").innerHTML = "Connection successful:\n";
+          document.getElementById("txtarea-request-usb-device").innerHTML += "---------------------\n";
+          document.getElementById("txtarea-request-usb-device").innerHTML += `Manufacturer name: ${usbDevice.manufacturerName}\n`;
+          document.getElementById("txtarea-request-usb-device").innerHTML += `Product name: ${usbDevice.productName}\n`;
+          document.getElementById("txtarea-request-usb-device").innerHTML += `Serial number: ${usbDevice.serialNumber}\n`;
+          document.getElementById("txtarea-request-usb-device").innerHTML += `Vendor id: ${usbDevice.vendorId}`;
+        })
+        .catch((error) => {
+          document.getElementById("txtarea-request-usb-device").innerHTML = "An error occured:\n";
+          document.getElementById("txtarea-request-usb-device").innerHTML += "---------------------\n";
+          document.getElementById("txtarea-request-usb-device").innerHTML += error;
+        });
+    });
+    document.getElementById("request-bl-device").addEventListener("click", () => {
+      const filters = [];
+      navigator.bluetooth
+        .requestDevice({ acceptAllDevices: true })
+        .then((blDevice) => {
+          document.getElementById("txtarea-request-bl-device").innerHTML = "Connection successful:\n";
+          document.getElementById("txtarea-request-bl-device").innerHTML += "---------------------\n";
+          document.getElementById("txtarea-request-bl-device").innerHTML += `Id: ${blDevice.id}\n`;
+          document.getElementById("txtarea-request-bl-device").innerHTML += `name: ${blDevice.name}\n`;
+          document.getElementById("txtarea-request-bl-device").innerHTML += `gatt: ${blDevice.gatt}`;
+        })
+        .catch((error) => {
+          document.getElementById("txtarea-request-bl-device").innerHTML = "An error occured:\n";
+          document.getElementById("txtarea-request-bl-device").innerHTML += "---------------------\n";
+          document.getElementById("txtarea-request-bl-device").innerHTML += error;
+        });
+    });
+  </script>
+</body>
+
+</html>
