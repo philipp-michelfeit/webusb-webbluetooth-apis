@@ -1,66 +1,125 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WebUSB / WebBluetooth Test</title>
+  <title>WebHID / WebBluetooth Test</title>
 </head>
 
 <body>
   <div>
-    <label>WebUSB / WebBluetooth Testing Site</label>
-    <br \>
-    <br \>
+    <label>WebHID / WebBluetooth Testing Site</label>
+    <br \ />
+    <br \ />
     <button id="request-usb-device" type="button">Request USB Device</button>
-    <br \>
-    <br \>
+    <br \ />
+    <br \ />
     <textarea readonly id="txtarea-request-usb-device" cols="50" rows="10"></textarea>
-    <br \>
-    <br \>
-    <br \>
-    <br \>
-    <button id="request-bl-device" type="button">Request Bluetooth Device</button>
-    <br \>
-    <br \>
+    <br \ />
+    <br \ />
+    <br \ />
+    <br \ />
+    <button id="request-bl-device" type="button">
+      Request Bluetooth Device
+    </button>
+    <br \ />
+    <br \ />
     <textarea readonly id="txtarea-request-bl-device" cols="50" rows="10"></textarea>
   </div>
   <script>
-    document.getElementById("request-usb-device").addEventListener("click", () => {
-      const filters = [];
-      navigator.usb
-        .requestDevice({ filters })
-        .then((usbDevice) => {
-          document.getElementById("txtarea-request-usb-device").innerHTML = "Connection successful:\n";
-          document.getElementById("txtarea-request-usb-device").innerHTML += "---------------------\n";
-          document.getElementById("txtarea-request-usb-device").innerHTML += `Manufacturer name: ${usbDevice.manufacturerName}\n`;
-          document.getElementById("txtarea-request-usb-device").innerHTML += `Product name: ${usbDevice.productName}\n`;
-          document.getElementById("txtarea-request-usb-device").innerHTML += `Serial number: ${usbDevice.serialNumber}\n`;
-          document.getElementById("txtarea-request-usb-device").innerHTML += `Vendor id: ${usbDevice.vendorId}`;
-        })
-        .catch((error) => {
-          document.getElementById("txtarea-request-usb-device").innerHTML = "An error occured:\n";
-          document.getElementById("txtarea-request-usb-device").innerHTML += "---------------------\n";
-          document.getElementById("txtarea-request-usb-device").innerHTML += error;
-        });
-    });
-    document.getElementById("request-bl-device").addEventListener("click", () => {
-      const filters = [];
-      navigator.bluetooth
-        .requestDevice({ acceptAllDevices: true })
-        .then((blDevice) => {
-          document.getElementById("txtarea-request-bl-device").innerHTML = "Connection successful:\n";
-          document.getElementById("txtarea-request-bl-device").innerHTML += "---------------------\n";
-          document.getElementById("txtarea-request-bl-device").innerHTML += `Id: ${blDevice.id}\n`;
-          document.getElementById("txtarea-request-bl-device").innerHTML += `name: ${blDevice.name}\n`;
-          document.getElementById("txtarea-request-bl-device").innerHTML += `gatt: ${blDevice.gatt}`;
-        })
-        .catch((error) => {
-          document.getElementById("txtarea-request-bl-device").innerHTML = "An error occured:\n";
-          document.getElementById("txtarea-request-bl-device").innerHTML += "---------------------\n";
-          document.getElementById("txtarea-request-bl-device").innerHTML += error;
-        });
-    });
+    function println(string) {
+      document.getElementById("txtarea-request-usb-device").innerHTML +=
+        string + "\n";
+    }
+
+    function toHex(buffer) {
+      return Array.prototype.map
+        .call(buffer, x => ('00' + x.toString(16)).slice(-2))
+        .join('');
+    }
+
+    document
+      .getElementById("request-usb-device")
+      .addEventListener("click", () => {
+        try {
+          let requestParams = { filters: [ { vendorId : 5824 } ] };
+
+          navigator.hid.requestDevice(requestParams).then((devices) => {
+            if (devices.length == 0) return;
+            devices[0].open().then(() => {
+              const device = devices[0];
+
+              println(`Product ID: ${device.productId}`);
+              println(`Product Name: ${device.productName}`);
+              println(`Vendor ID: ${device.vendorId}`);
+
+              for (let collection of device.collections) {
+                // An HID collection includes usage, usage page, reports, and subcollections.
+                println(`Usage: ${collection.usage}`);
+                println(`Usage page: ${collection.usagePage}`);
+
+                for (let inputReport of collection.inputReports) {
+                  println(`Input report: ${inputReport.reportId}`);
+                  // Loop through inputReport.items
+                }
+
+                for (let outputReport of collection.outputReports) {
+                  println(`Output report: ${outputReport.reportId}`);
+                  // Loop through outputReport.items
+                }
+
+                for (let featureReport of collection.featureReports) {
+                  println(`Feature report: ${featureReport.reportId}`);
+                  // Loop through featureReport.items
+                }
+
+                // Loop through subcollections with collection.children
+              }
+
+              let buffer = new Uint8Array(64);
+              buffer.fill(0);
+              buffer[0] = 49;
+
+              const reportId = 0;
+
+              println(buffer);
+
+              device.sendFeatureReport(reportId, buffer);
+
+            });
+          });
+        } catch (error) {
+          console.error(error);
+        }
+      });
+    document
+      .getElementById("request-bl-device")
+      .addEventListener("click", () => {
+
+        const options = {
+          filters: [{ name: "PAR_43852" }],
+          optionalServices: ["49535343-fe7d-4ae5-8fa9-9fafd205e455", "49535343-8841-43f4-a8d4-ecbe34729bb3", "49535343-1e4d-4bd9-ba61-23c647249616"]
+        };
+
+        navigator.bluetooth.requestDevice(options)
+          .then(device => device.gatt.connect())
+          .then(server => server.getPrimaryService("49535343-fe7d-4ae5-8fa9-9fafd205e455"))
+          .then(service => service.getCharacteristic("49535343-1e4d-4bd9-ba61-23c647249616")) // write characteristic
+          .then(characteristic => {
+            let buffer = new Uint8Array(64);
+            buffer.fill(0);
+            buffer[0] = 6;
+
+            console.log(buffer.toString());
+
+            return characteristic.writeValueWithResponse(buffer);
+          }).then(_ => {
+            console.log(_);
+          })
+          .catch(error => { console.error(error); });
+
+      })
   </script>
 </body>
 
