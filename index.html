@@ -105,17 +105,15 @@
         navigator.bluetooth.requestDevice(options)
           .then(device => device.gatt.connect())
           .then(server => server.getPrimaryService("49535343-fe7d-4ae5-8fa9-9fafd205e455"))
-          .then(service => service.getCharacteristic("49535343-1e4d-4bd9-ba61-23c647249616")) // write characteristic
+          .then(service => service.getCharacteristic("49535343-1e4d-4bd9-ba61-23c647249616"))
           .then(characteristic => {
             let buffer = new Uint8Array(64);
             buffer.fill(0);
             buffer[0] = 6;
 
-            console.log(buffer.toString());
-
             return characteristic.writeValueWithResponse(buffer);
-          }).then(_ => {
-            console.log(_);
+          }).then(value => {
+            console.log(value);
           })
           .catch(error => { console.error(error); });
 
